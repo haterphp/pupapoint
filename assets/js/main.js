@@ -139,7 +139,7 @@ class DragElement extends Drawable {
             fourElement: null
         };
 
-
+        this.clickEvents();
         this.buttonsShow();
     }
 
@@ -210,77 +210,71 @@ class DragElement extends Drawable {
     }
 
     clickEvents() { // click event handler
+        
+        for(let name in this.childElements){
+            let startTime, endTime, longPress;
 
-        if(this.status === 'non-dragged'){
-            console.log(this.status);
-            return false;
-        }
-        else {
-            for (let name in this.childElements) {
-                let startTime, endTime, longPress;
+            this.childElements[name].addEventListener('click' ,()=>{
 
-                this.childElements[name].addEventListener('click', () => {
+                if(longPress) {
 
-                    if (longPress) {
+                    if (this.connectedElements[name] === null) {
 
-                        if (this.connectedElements[name] === null) {
+                        this.childElements[name].className += " disable"; // add class disable for disabled child element
 
-                            this.childElements[name].className += " disable"; // add class disable for disabled child element
-
-                            let pos = this.changePosition(name); // change new position for new drag element
-                            let el = app.spawn_element(DragElement, pos); // create new drag element
-                            let linePosition = {
-                                obj1: {
-                                    x: this.x + this.w / 2,
-                                    y: this.y + this.h / 2
-                                },
-                                obj2: {
-                                    x: el.x + el.w / 2,
-                                    y: el.y + el.h / 2
-                                }
+                        let pos = this.changePosition(name); // change new position for new drag element
+                        let el = app.spawn_element(DragElement, pos); // create new drag element
+                        let linePosition = {
+                            obj1:{
+                                x: this.x + this.w / 2,
+                                y: this.y + this.h / 2
+                            },
+                            obj2:{
+                                x: el.x + el.w / 2,
+                                y: el.y + el.h / 2
                             }
-                            this.connectedElements[name] = el.number;
-
-                            let connectedName = this.connectedHelper(name);
-                            el.connectedElements[connectedName] = this.number;
-
-                            el.childElements[connectedName].className += " disable";
-
-                            let line = new Line(this.app, linePosition);
-
-                            this.lines[name] = line.lineNumber; // create new line
-                            el.lines[connectedName] = line.lineNumber; // create new line
-
-                            this.app.lines.push(line);
-
-                            // this place for connected logic
-
-                            this.app.connected.push({
-                                from: `${this.number}-${name}`,
-                                to: `${el.number}-${connectedName}`
-                            })
-
-                            this.app.store();
-
                         }
+                        this.connectedElements[name] = el.number;
+
+                        let connectedName = this.connectedHelper(name);
+                        el.connectedElements[connectedName] = this.number;
+
+                        el.childElements[connectedName].className += " disable";
+
+                        let line = new Line(this.app, linePosition);
+
+                        this.lines[name] = line.lineNumber; // create new line
+                        el.lines[connectedName] = line.lineNumber; // create new line
+
+                        this.app.lines.push(line);
+
+                        // this place for connected logic
+
+                        this.app.connected.push({
+                            from: `${this.number}-${name}`,
+                            to: `${el.number}-${connectedName}`
+                        })
+
+                        this.app.store();
+
                     }
-                })
-
-                this.childElements[name].addEventListener('mousedown', () => {
-                    startTime = new Date().getTime();
-                })
-
-                this.childElements[name].addEventListener('mouseup', () => {
-                    endTime = new Date().getTime();
-                    longPress = (endTime - startTime > 100) ? false : true;
-                })
-
-            }
-            this.buttonsContainer.children[1].onclick = () => {
-                if (this.app.remove(this)) {
-                    this.removeElement();
-
                 }
+            })
+
+            this.childElements[name].addEventListener('mousedown' ,()=>{
+                startTime = new Date().getTime();
+            })
+
+            this.childElements[name].addEventListener('mouseup' ,()=>{
+                endTime = new Date().getTime();
+                longPress = (endTime - startTime > 100) ? false : true;
+            })
+
+        }
+        this.buttonsContainer.children[1].onclick = () =>{
+            if (this.app.remove(this)) {
+                this.removeElement();
+
             }
         }
     }
@@ -371,7 +365,6 @@ class App {
         this.elements.forEach(e=>{
             e.update();
             e.drag();
-            e.clickEvents();
         })
     }
 
