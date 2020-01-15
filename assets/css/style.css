@@ -1,0 +1,75 @@
+*{
+    margin:0;
+    padding:0;
+    font-family: Calibri;
+}
+
+header{
+    width: 100%;
+    height: 7vh;
+}
+
+main{
+    width: 100vw;
+    height: 93vh;
+}
+
+#drag_zone{
+    width: 100%;
+    height: 100%;
+    position: relative;
+
+}
+
+.drag_element{
+    width: 90px;
+    border:solid 3px;
+    position: absolute;
+    display: flex;
+    flex-wrap: wrap;
+    cursor:pointer;
+}
+
+.drag_element:hover .element{
+    opacity: 1;
+}
+
+#view{
+    margin-left: 5vh;
+}
+
+.element{
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: solid 1px;
+    transition: opacity .5s;
+    opacity: 0;
+}
+.disable{
+    border: 0;
+    background-color: #dbdbdb;
+}
+.el-1{
+    width: 100%;
+}
+.el-2{
+    width: 50%;
+}
+.el-3{
+    width: 50%;
+}
+.el-4{
+    width: 100%;
+}
+.buttons-container{
+    transition: .5s;
+    opacity: 0;
+    position: absolute;
+    right: -45px;
+    height: 90px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
