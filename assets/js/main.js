@@ -4,9 +4,13 @@ class Drawable {
         this.y = 0;
         this.app = app;
         this.number = this.app.elementNumber;
+
+        if(this.constructor.name == 'Line'){
+            this.lineNumber = this.app.lineNumb;
+        }
     }
 
-    createElement() {
+    createElement() { // create drag element
 
         this.element = $("\n" +
             "<div class=\"drag_element\" id='" + this.number + "' >\n" +
@@ -27,7 +31,7 @@ class Drawable {
 
     }
 
-    createLine(pos1, pos2) {
+    createLine(pos1, pos2) { // create connect line
         //let svg = $(`<line x1="${pos1.x}" y1="${pos1.y}" x2="${pos2.x}" y2="${pos2.y}" stroke="black" />`);
         let svg = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         let attrs = {
@@ -45,23 +49,24 @@ class Drawable {
         console.log(this.app.svgContainer)
 
         this.app.svgContainer.append(svg);
-        this.app.lines.push(svg);
+        this.app.lineNumb++;
+
         return svg;
     }
 
-    draw() {
+    draw() { // draw drag element on drag_zone
         this.element.css({
             left: this.x + "px",
             top: this.y + "px"
         })
     }
 
-    update(){
+    update(){ // update position drag element
         this.x = this.element.position().left;
         this.y = this.element.position().top;
     }
 
-    removeElement(){
+    removeElement(){ // remove element in drag_zone
         this.element.remove();
     }
 }
@@ -72,18 +77,18 @@ class Line extends Drawable{
         this.line = this.createLine(position.obj1, position.obj2);
     }
 
-    update(pos1, pos2){
+    update(pos1, pos2){ // update position line
         this.x1 = pos1.x;
         this.x2 = pos2.x;
         this.y1 = pos1.y;
         this.y2 = pos2.y;
     }
 
-    getLine(){
+    getLine(){ // get object line
         return this.line;
     }
 
-    draw(){
+    draw(){ // draw line on svg
         let obj = {
             x1: this.x1,
             y1: this.y1,
@@ -105,40 +110,40 @@ class DragElement extends Drawable {
         this.x = position.x;
         this.y = position.y;
 
+        this.status = 'dragged';
+
         this.createElement();
 
         this.w = this.h = this.element.width();
 
-        this.drag();
-
-        this.childElements = {
+        this.childElements = { // child element in element
             firstElement: this.element[0].children[0],
             secondElement: this.element[0].children[1],
             threeElement: this.element[0].children[2],
             fourElement: this.element[0].children[3],
         };
 
-        this.buttonsContainer = this.element[0].children[4];
+        this.buttonsContainer = this.element[0].children[4]; // buttons in element
 
-        this.connectedElements = {
+        this.connectedElements = { // connected elements with this element
             firstElement: null,
             secondElement: null,
             threeElement: null,
             fourElement: null
         };
 
-        this.lines = {
+        this.lines = { // lines for connected elements
             firstElement: null,
             secondElement: null,
             threeElement: null,
             fourElement: null
         };
 
-        this.clickEvents();
+
         this.buttonsShow();
     }
 
-    buttonsShow(){
+    buttonsShow(){ // show buttons container
         if(this.number === 0){
             this.buttonsContainer.children[1].style.display = 'none';
         }
@@ -150,8 +155,20 @@ class DragElement extends Drawable {
         })
     }
 
-    drag() {
-        this.element.draggable();
+    drag() { // function for drag this element
+        if(!this.app.shiftPressed){
+            this.element.draggable({
+                disabled: false
+            });
+            this.status = 'dragged';
+        }
+        else{
+            this.element.draggable({
+                disabled: true
+            });
+            this.status = 'non-dragged';
+        }
+
     }
 
     connectedHelper(name){
@@ -171,7 +188,7 @@ class DragElement extends Drawable {
         }
     }
 
-    update(){
+    update(){ // update lines
 
         for(let name in this.lines) {
             if(this.lines[name] !== null){
@@ -185,68 +202,85 @@ class DragElement extends Drawable {
                         y: this.app.elements[this.connectedElements[name]].y + this.app.elements[this.connectedElements[name]].h / 2
                     }
                 }
-                this.lines[name].update(linePosition.obj1, linePosition.obj2);
-                this.lines[name].draw();
+                this.app.lines[this.lines[name]].update(linePosition.obj1, linePosition.obj2);
+                this.app.lines[this.lines[name]].draw();
             }
         }
         super.update();
     }
 
-    clickEvents() {
-        for(let name in this.childElements){
-            let startTime, endTime, longPress;
+    clickEvents() { // click event handler
 
-            this.childElements[name].addEventListener('click' ,()=>{
-                if(longPress) {
-                    if (this.connectedElements[name] === null) {
-
-                        this.childElements[name].className += " disable";
-                        let pos = this.changePosition(name);
-                        let el = app.spawn_element(DragElement, pos);
-
-                        let linePosition = {
-                            obj1:{
-                                x: this.x + this.w / 2,
-                                y: this.y + this.h / 2
-                            },
-                            obj2:{
-                                x: el.x + el.w / 2,
-                                y: el.y + el.h / 2
-                            }
-                        }
-
-                        this.lines[name] = new Line(this.app, linePosition);
-
-                        this.connectedElements[name] = el.number;
-                        let connectedName = this.connectedHelper(name);
-
-                        el.connectedElements[connectedName] = this.number;
-                        el.childElements[connectedName].className += " disable";
-
-                        this.app.connected.push({
-                            from: `${this.number}-${name}`,
-                            to: `${el.number}-${connectedName}`
-                        })
-
-                        this.app.store();
-
-                    }
-                }
-            })
-
-            this.childElements[name].addEventListener('mousedown' ,()=>{
-                startTime = new Date().getTime();
-            })
-
-            this.childElements[name].addEventListener('mouseup' ,()=>{
-                endTime = new Date().getTime();
-                longPress = (endTime - startTime > 100) ? false : true;
-            })
-
+        if(this.status === 'non-dragged'){
+            console.log(this.status);
+            return false;
         }
-        this.buttonsContainer.children[1].onclick = () =>{
-            if (this.app.remove(this)) {
-                this.removeElement();
+        else {
+            for (let name in this.childElements) {
+                let startTime, endTime, longPress;
+
+                this.childElements[name].addEventListener('click', () => {
+
+                    if (longPress) {
+
+                        if (this.connectedElements[name] === null) {
+
+                            this.childElements[name].className += " disable"; // add class disable for disabled child element
+
+                            let pos = this.changePosition(name); // change new position for new drag element
+                            let el = app.spawn_element(DragElement, pos); // create new drag element
+                            let linePosition = {
+                                obj1: {
+                                    x: this.x + this.w / 2,
+                                    y: this.y + this.h / 2
+                                },
+                                obj2: {
+                                    x: el.x + el.w / 2,
+                                    y: el.y + el.h / 2
+                                }
+                            }
+                            this.connectedElements[name] = el.number;
+
+                            let connectedName = this.connectedHelper(name);
+                            el.connectedElements[connectedName] = this.number;
+
+                            el.childElements[connectedName].className += " disable";
+
+                            let line = new Line(this.app, linePosition);
+
+                            this.lines[name] = line.lineNumber; // create new line
+                            el.lines[connectedName] = line.lineNumber; // create new line
+
+                            this.app.lines.push(line);
+
+                            // this place for connected logic
+
+                            this.app.connected.push({
+                                from: `${this.number}-${name}`,
+                                to: `${el.number}-${connectedName}`
+                            })
+
+                            this.app.store();
+
+                        }
+                    }
+                })
+
+                this.childElements[name].addEventListener('mousedown', () => {
+                    startTime = new Date().getTime();
+                })
+
+                this.childElements[name].addEventListener('mouseup', () => {
+                    endTime = new Date().getTime();
+                    longPress = (endTime - startTime > 100) ? false : true;
+                })
+
+            }
+            this.buttonsContainer.children[1].onclick = () => {
+                if (this.app.remove(this)) {
+                    this.removeElement();
+
+                }
             }
         }
     }
@@ -278,6 +312,23 @@ class App {
         this.lines = [];
         this.connected = [];
         this.elementNumber  = 0;
+        this.lineNumb  = 0;
+        this.shiftPressed = false;
+
+        this.keyEvents();
+    }
+
+    keyEvents(){
+        document.addEventListener('keydown',e=>{
+            if(e.key === "Shift"){
+                this.shiftPressed = true;
+            }
+        })
+        document.addEventListener('keyup', e=>{
+            if(e.key === 'Shift'){
+                this.shiftPressed = false;
+            }
+        })
     }
 
     start() {
@@ -319,6 +370,8 @@ class App {
     updateElements(){
         this.elements.forEach(e=>{
             e.update();
+            e.drag();
+            e.clickEvents();
         })
     }
 
