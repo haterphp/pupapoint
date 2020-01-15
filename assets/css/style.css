@@ -64,6 +64,7 @@ main{
     width: 100%;
 }
 .buttons-container{
+    z-index: 100;
     transition: .5s;
     opacity: 0;
     position: absolute;
@@ -72,4 +73,11 @@ main{
     display: flex;
     flex-direction: column;
     justify-content: space-around;
+}
+.svg-container{
+    width: 100%;
+    height: calc(100% - 7vh);
+    position: absolute;
+    z-index: -10;
+    top: 7vh;
 }

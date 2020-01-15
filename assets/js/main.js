@@ -15,15 +15,21 @@ class Drawable {
             "    <div class=\"element el-3\">3</div>\n" +
             "    <div class=\"element el-4\">4</div>\n" +
             "    <div class='buttons-container'>" +
-            "    <button class='btn-drag btn btn-outline-primary'>+</button>" +
-            "    <button class='btn-drag btn btn-outline-danger'>-</button>" +
-            "</div>" +
+            "       <button class='btn-drag btn btn-outline-primary'>+</button>" +
+            "       <button class='btn-drag btn btn-outline-danger'>-</button>" +
+            "    </div>" +
+            "    <div></div>" +
             "</div>");
 
         this.app.zone.append(this.element);
         this.app.elementNumber++;
         this.draw();
 
+    }
+
+    createLine(pos1, pos2) {
+        let svg = $(`<line x1="${pos1.x}" y1="${pos1.y}" x2="${pos2.x}" y2="${pos2.y}" stroke="black" />`);
+        this.app.svgContainer.append(svg);
     }
 
     draw() {
@@ -40,6 +46,13 @@ class Drawable {
 
     removeElement(){
         this.element.remove();
+    }
+}
+
+class Line extends Drawable{
+    constructor(app, position){
+        super(app);
+        this.createLine(position.obj1, position.obj2)
     }
 }
 
@@ -64,7 +77,7 @@ class DragElement extends Drawable {
             secondElement: this.element[0].children[1],
             threeElement: this.element[0].children[2],
             fourElement: this.element[0].children[3],
-        }
+        };
 
         this.buttonsContainer = this.element[0].children[4];
 
@@ -73,7 +86,14 @@ class DragElement extends Drawable {
             secondElement: null,
             threeElement: null,
             fourElement: null
-        }
+        };
+
+        this.lines = {
+            firstElement: null,
+            secondElement: null,
+            threeElement: null,
+            fourElement: null
+        };
 
         this.clickEvents();
         this.buttonsShow();
@@ -95,6 +115,26 @@ class DragElement extends Drawable {
         this.element.draggable();
     }
 
+    connectedHelper(name){
+        switch(name){
+            case "firstElement":
+                return "fourElement";
+                break;
+            case "secondElement":
+                return "threeElement";
+                break;
+            case "threeElement":
+                return "secondElement";
+                break;
+            case "fourElement":
+                return "firstElement";
+                break;
+        }
+    }
+
+
+
+
     clickEvents() {
         for(let name in this.childElements){
             let startTime, endTime, longPress;
@@ -102,11 +142,27 @@ class DragElement extends Drawable {
             this.childElements[name].addEventListener('click' ,()=>{
                 if(longPress) {
                     if (this.connectedElements[name] === null) {
+
                         this.childElements[name].className += " disable";
                         let pos = this.changePosition(name);
                         let el = app.spawn_element(DragElement, pos);
+
+
+
                         this.connectedElements[name] = el.number;
+                        let connectedName = this.connectedHelper(name);
+
+                        el.connectedElements[connectedName] = this.number;
+                        el.childElements[connectedName].className += " disable";
+
+                        this.app.connected.push({
+                            from: `${this.number}-${name}`,
+                            to: `${el.number}-${connectedName}`
+                        })
+
+                        this.app.store();
                         console.log(this.connectedElements)
+                        console.log(this.app.connected)
                     }
                 }
             })
@@ -131,16 +187,16 @@ class DragElement extends Drawable {
     changePosition(name){
         switch(name){
             case "firstElement":
-                return {x: this.x, y: this.y - 150};
+                return {x: this.x, y: this.y - 200};
                 break;
             case "secondElement":
-                return {x: this.x - 150, y: this.y};
+                return {x: this.x - 200, y: this.y};
                 break;
             case "threeElement":
-                return {x: this.x + 150, y: this.y};
+                return {x: this.x + 200, y: this.y};
                 break;
             case "fourElement":
-                return {x: this.x, y: this.y + 150};
+                return {x: this.x, y: this.y + 200};
                 break;
         }
     }
@@ -150,8 +206,9 @@ class DragElement extends Drawable {
 class App {
     constructor() {
         this.zone = $('#drag_zone');
+        this.svgContainer = $('.svg-container');
         this.elements = [];
-        this.connection = [];
+        this.connected = [];
         this.elementNumber  = 0;
     }
 
@@ -193,6 +250,10 @@ class App {
         this.elements.forEach(e=>{
             e.update();
         })
+    }
+
+    store(){
+        console.log('store not working :)')
     }
 }
 
