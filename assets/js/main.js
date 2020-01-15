@@ -28,8 +28,25 @@ class Drawable {
     }
 
     createLine(pos1, pos2) {
-        let svg = $(`<line x1="${pos1.x}" y1="${pos1.y}" x2="${pos2.x}" y2="${pos2.y}" stroke="black" />`);
+        //let svg = $(`<line x1="${pos1.x}" y1="${pos1.y}" x2="${pos2.x}" y2="${pos2.y}" stroke="black" />`);
+        let svg = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        let attrs = {
+            x1: pos1.x,
+            y1: pos1.y,
+            x2: pos2.x,
+            y2: pos2.y,
+            stroke: "black"
+        };
+
+        for(let attr in attrs){
+            svg.setAttribute(attr, attrs[attr]);
+        }
+
+        console.log(this.app.svgContainer)
+
         this.app.svgContainer.append(svg);
+        this.app.lines.push(svg);
+        return svg;
     }
 
     draw() {
@@ -52,7 +69,31 @@ class Drawable {
 class Line extends Drawable{
     constructor(app, position){
         super(app);
-        this.createLine(position.obj1, position.obj2)
+        this.line = this.createLine(position.obj1, position.obj2);
+    }
+
+    update(pos1, pos2){
+        this.x1 = pos1.x;
+        this.x2 = pos2.x;
+        this.y1 = pos1.y;
+        this.y2 = pos2.y;
+    }
+
+    getLine(){
+        return this.line;
+    }
+
+    draw(){
+        let obj = {
+            x1: this.x1,
+            y1: this.y1,
+            x2: this.x2,
+            y2: this.y2
+        }
+
+        for(let name in obj){
+            this.line.setAttribute(name, obj[name]);
+        }
     }
 }
 
@@ -69,8 +110,6 @@ class DragElement extends Drawable {
         this.w = this.h = this.element.width();
 
         this.drag();
-
-
 
         this.childElements = {
             firstElement: this.element[0].children[0],
@@ -132,8 +171,26 @@ class DragElement extends Drawable {
         }
     }
 
+    update(){
 
-
+        for(let name in this.lines) {
+            if(this.lines[name] !== null){
+                let linePosition = {
+                    obj1:{
+                        x: this.x + this.w / 2,
+                        y: this.y + this.h / 2
+                    },
+                    obj2:{
+                        x: this.app.elements[this.connectedElements[name]].x + this.app.elements[this.connectedElements[name]].w / 2,
+                        y: this.app.elements[this.connectedElements[name]].y + this.app.elements[this.connectedElements[name]].h / 2
+                    }
+                }
+                this.lines[name].update(linePosition.obj1, linePosition.obj2);
+                this.lines[name].draw();
+            }
+        }
+        super.update();
+    }
 
     clickEvents() {
         for(let name in this.childElements){
@@ -147,7 +204,18 @@ class DragElement extends Drawable {
                         let pos = this.changePosition(name);
                         let el = app.spawn_element(DragElement, pos);
 
+                        let linePosition = {
+                            obj1:{
+                                x: this.x + this.w / 2,
+                                y: this.y + this.h / 2
+                            },
+                            obj2:{
+                                x: el.x + el.w / 2,
+                                y: el.y + el.h / 2
+                            }
+                        }
 
+                        this.lines[name] = new Line(this.app, linePosition);
 
                         this.connectedElements[name] = el.number;
                         let connectedName = this.connectedHelper(name);
@@ -161,8 +229,7 @@ class DragElement extends Drawable {
                         })
 
                         this.app.store();
-                        console.log(this.connectedElements)
-                        console.log(this.app.connected)
+
                     }
                 }
             })
@@ -208,6 +275,7 @@ class App {
         this.zone = $('#drag_zone');
         this.svgContainer = $('.svg-container');
         this.elements = [];
+        this.lines = [];
         this.connected = [];
         this.elementNumber  = 0;
     }
@@ -222,6 +290,8 @@ class App {
 
         this.loop();
     }
+
+
 
     remove(element){
         let idx = this.elements.indexOf(element);
