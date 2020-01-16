@@ -157,12 +157,28 @@ class DragElement extends Drawable {
 
     drag() { // function for drag this element
         if(!this.app.shiftPressed){
+
             this.element.draggable({
                 disabled: false
             });
             this.status = 'dragged';
+            for(let name in this.childElements){
+                $(this.childElements[name]).draggable({
+                    disabled: true,
+                })
+                this.childElements[name].style.opacity = "";
+            }
+
         }
         else{
+
+            for(let name in this.childElements){
+                $(this.childElements[name]).draggable({
+                    disabled: false,
+                    revert: true
+                })
+                this.childElements[name].style.opacity = 1;
+            }
             this.element.draggable({
                 disabled: true
             });
@@ -198,12 +214,12 @@ class DragElement extends Drawable {
                         y: this.y + this.h / 2
                     },
                     obj2:{
-                        x: this.app.elements[this.connectedElements[name]].x + this.app.elements[this.connectedElements[name]].w / 2,
-                        y: this.app.elements[this.connectedElements[name]].y + this.app.elements[this.connectedElements[name]].h / 2
+                        x: this.app.elements[this.app.elements.findIndex(item => item.number === this.connectedElements[name])].x + this.app.elements[this.app.elements.findIndex(item => item.number === this.connectedElements[name])].w / 2,
+                        y: this.app.elements[this.app.elements.findIndex(item => item.number === this.connectedElements[name])].y + this.app.elements[this.app.elements.findIndex(item => item.number === this.connectedElements[name])].h / 2
                     }
                 }
-                this.app.lines[this.lines[name]].update(linePosition.obj1, linePosition.obj2);
-                this.app.lines[this.lines[name]].draw();
+                this.app.lines[this.app.lines.findIndex(line => line.lineNumber === this.lines[name])].update(linePosition.obj1, linePosition.obj2);
+                this.app.lines[this.app.lines.findIndex(line => line.lineNumber === this.lines[name])].draw();
             }
         }
         super.update();
@@ -271,10 +287,24 @@ class DragElement extends Drawable {
             })
 
         }
+
+        //delete drag and line connection
         this.buttonsContainer.children[1].onclick = () =>{
+            for(let name in this.lines){
+                if (this.lines[name] !== null) {
+                    let el = this.app.elements[this.app.elements.findIndex(item => item.number === this.connectedElements[name])];
+
+                    this.app.lines[this.app.lines.findIndex(line => line.lineNumber === this.lines[name])].line.remove();
+                    this.app.lines.splice(this.app.lines.findIndex(line => line.lineNumber === this.lines[name]), 1);
+
+                    let connectedName = this.connectedHelper(name);
+                    el.lines[connectedName] = null;
+                    el.connectedElements[connectedName] = null;
+                    el.childElements[connectedName].classList.remove('disable');
+                }
+            }
             if (this.app.remove(this)) {
                 this.removeElement();
-
             }
         }
     }
