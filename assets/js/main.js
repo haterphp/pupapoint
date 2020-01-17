@@ -204,22 +204,30 @@ class DragElement extends Drawable {
         }
     }
 
+    findElement(array, element, key){
+        return array[array.findIndex(item => item[key] === element)];
+    }
+
     update(){ // update lines
 
         for(let name in this.lines) {
             if(this.lines[name] !== null){
+
+                let obj2 = this.findElement(this.app.elements, this.connectedElements[name], 'number');
+                let line = this.findElement(this.app.lines, this.lines[name], 'lineNumber');
+                
                 let linePosition = {
                     obj1:{
                         x: this.x + this.w / 2,
                         y: this.y + this.h / 2
                     },
                     obj2:{
-                        x: this.app.elements[this.app.elements.findIndex(item => item.number === this.connectedElements[name])].x + this.app.elements[this.app.elements.findIndex(item => item.number === this.connectedElements[name])].w / 2,
-                        y: this.app.elements[this.app.elements.findIndex(item => item.number === this.connectedElements[name])].y + this.app.elements[this.app.elements.findIndex(item => item.number === this.connectedElements[name])].h / 2
+                        x: obj2.x + obj2.w / 2,
+                        y: obj2.y + obj2.h / 2
                     }
                 }
-                this.app.lines[this.app.lines.findIndex(line => line.lineNumber === this.lines[name])].update(linePosition.obj1, linePosition.obj2);
-                this.app.lines[this.app.lines.findIndex(line => line.lineNumber === this.lines[name])].draw();
+                line.update(linePosition.obj1, linePosition.obj2);
+                line.draw();
             }
         }
         super.update();
