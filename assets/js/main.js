@@ -175,6 +175,7 @@ class DragElement extends Drawable {
             for(let name in this.childElements){
                 $(this.childElements[name]).draggable({
                     disabled: false,
+
                     revert: true
                 })
                 this.childElements[name].style.opacity = 1;
@@ -215,7 +216,7 @@ class DragElement extends Drawable {
 
                 let obj2 = this.findElement(this.app.elements, this.connectedElements[name], 'number');
                 let line = this.findElement(this.app.lines, this.lines[name], 'lineNumber');
-                
+
                 let linePosition = {
                     obj1:{
                         x: this.x + this.w / 2,
@@ -233,6 +234,48 @@ class DragElement extends Drawable {
         super.update();
     }
 
+    createConnection(el, name){
+        this.childElements[name].className += " disable"; // add class disable for disabled child element
+        this.connectedElements[name] = el.number;
+
+        let connectedName = this.connectedHelper(name);
+        el.childElements[connectedName].className += " disable";
+        el.connectedElements[connectedName] = this.number;
+
+        let linePosition = {
+            obj1:{
+                x: this.x + this.w / 2,
+                y: this.y + this.h / 2
+            },
+            obj2:{
+                x: el.x + el.w / 2,
+                y: el.y + el.h / 2
+            }
+        }
+
+        let line = new Line(this.app, linePosition);
+
+        this.lines[name] = line.lineNumber; // create new line
+        el.lines[connectedName] = line.lineNumber; // create new line
+
+        this.app.lines.push(line);
+
+        this.app.connected.push({
+            from: {
+                number: this.number,
+                connectedElement: name,
+            },
+            to: {
+                number: el.number,
+                connectedElement: connectedName
+            }
+
+        })
+
+        console.log(this.app.connected);
+
+    }
+
     clickEvents() { // click event handler
         
         for(let name in this.childElements){
@@ -244,40 +287,10 @@ class DragElement extends Drawable {
 
                     if (this.connectedElements[name] === null) {
 
-                        this.childElements[name].className += " disable"; // add class disable for disabled child element
-
                         let pos = this.changePosition(name); // change new position for new drag element
                         let el = app.spawn_element(DragElement, pos); // create new drag element
-                        let linePosition = {
-                            obj1:{
-                                x: this.x + this.w / 2,
-                                y: this.y + this.h / 2
-                            },
-                            obj2:{
-                                x: el.x + el.w / 2,
-                                y: el.y + el.h / 2
-                            }
-                        }
-                        this.connectedElements[name] = el.number;
 
-                        let connectedName = this.connectedHelper(name);
-                        el.connectedElements[connectedName] = this.number;
-
-                        el.childElements[connectedName].className += " disable";
-
-                        let line = new Line(this.app, linePosition);
-
-                        this.lines[name] = line.lineNumber; // create new line
-                        el.lines[connectedName] = line.lineNumber; // create new line
-
-                        this.app.lines.push(line);
-
-                        // this place for connected logic
-
-                        this.app.connected.push({
-                            from: `${this.number}-${name}`,
-                            to: `${el.number}-${connectedName}`
-                        })
+                        this.createConnection(el, name);
 
                         this.app.store();
 
@@ -313,6 +326,8 @@ class DragElement extends Drawable {
             }
             if (this.app.remove(this)) {
                 this.removeElement();
+
+                console.log(this.app.connected[0].from.number);
             }
         }
     }
@@ -346,8 +361,29 @@ class App {
         this.elementNumber  = 0;
         this.lineNumb  = 0;
         this.shiftPressed = false;
+        this.page = 'drag';
+        this.panelApp = ['drag', 'view'];
 
         this.keyEvents();
+    }
+
+    nav(){
+        document.onclick = (e) => {
+            let path = e.target.id;
+            this.go(path);
+        }
+    }
+
+    go(path){
+        this.page = path;
+        $(`#${this.page}_container`).css('display','block');
+        $(`#${this.page}`).css('display','none');
+        this.panelApp.forEach(e=>{
+            if(e != this.page){
+                $(`#${e}_container`).css('display','none');
+                $(`#${e}`).css('display','block');
+            }
+        })
     }
 
     keyEvents(){
@@ -370,7 +406,7 @@ class App {
             y: this.zone.height() / 2 - 60,
         }
         this.mainEl = this.spawn_element(DragElement, this.startPos);
-
+        this.nav();
         this.loop();
     }
 

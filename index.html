@@ -31,14 +31,22 @@
 <body>
 <header class="d-flex align-items-center">
     <h1 style="margin-left: 5vh">PupaPoint</h1>
-    <button id="view">Просмотр</button>
+    <div class="nav">
+        <button id="view">Просмотр</button>
+        <button id="drag" style="display: none">Режим редактирование</button>
+    </div>
 </header>
 <main>
-    <div id="drag_zone">
+    <div id="drag_container">
+        <div id="drag_zone">
+
+        </div>
+        <svg  class="svg-container">
+        </svg>
+    </div>
+    <div id="view_container">
 
     </div>
-    <svg  class="svg-container">
-    </svg>
 </main>
 </body>
 </html>
