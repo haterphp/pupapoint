@@ -370,7 +370,9 @@ class App {
     nav(){
         document.onclick = (e) => {
             let path = e.target.id;
-            this.go(path);
+            if(this.panelApp.includes(path)){
+                this.go(path);
+            }
         }
     }
 
